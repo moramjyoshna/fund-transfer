@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ing.fundtransfer.dto.ITransactionHistoryDto;
+import com.ing.fundtransfer.dto.TransactionHistoryDto;
 import com.ing.fundtransfer.dto.TransferAmountRequestDto;
 import com.ing.fundtransfer.dto.TransferAmountResponseDto;
 import com.ing.fundtransfer.service.TransactionService;
@@ -73,9 +74,16 @@ public class TransactionController {
 	 * 
 	 */
 	
-	@GetMapping("/transaction/{accountNumber}/{month}/{year}")
-	public List<ITransactionHistoryDto> viewMonthTransaction(@PathVariable("accountNumber") String accountNumber, @PathVariable("month") String month, @PathVariable("year") Integer year){
-		log.info("inside month transaction controller");
-		return transactionService.viewMonthTransaction(accountNumber, month, year);
+//	@GetMapping("/transaction/{accountNumber}/{month}/{year}")
+//	public List<ITransactionHistoryDto> viewMonthTransaction(@PathVariable("accountNumber") String accountNumber, @PathVariable("month") String month, @PathVariable("year") Integer year){
+//		log.info("inside month transaction controller");
+//		return transactionService.viewMonthTransaction(accountNumber, month, year);
+//	}
+	
+	@GetMapping("/transaction/{type}/{accountNumber}/{month}/{year}")
+	public ResponseEntity<List<TransactionHistoryDto>> monthHistory(@PathVariable("type")String type, @PathVariable("accountNumber") String accountNumber, @PathVariable("month") String month, @PathVariable("year") Integer year) {
+		List<TransactionHistoryDto> listTransactionHistoryDto = transactionService.viewWeekMonthTransaction(type, accountNumber, month,
+				year);
+		return new ResponseEntity<>(listTransactionHistoryDto, HttpStatus.FOUND);
 	}
 }

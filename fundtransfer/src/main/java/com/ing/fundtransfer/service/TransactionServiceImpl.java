@@ -3,6 +3,7 @@ package com.ing.fundtransfer.service;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ing.fundtransfer.dto.ITransactionHistoryDto;
+import com.ing.fundtransfer.dto.TransactionHistoryDto;
 import com.ing.fundtransfer.dto.TransferAmountRequestDto;
 import com.ing.fundtransfer.dto.TransferAmountResponseDto;
 import com.ing.fundtransfer.entity.Account;
@@ -166,40 +168,82 @@ public class TransactionServiceImpl implements TransactionService {
 	 * 
 	 */
 
+//	@Override
+//	public List<ITransactionHistoryDto> viewMonthTransaction(String accountNumber, String month, Integer year) {
+//		Month mon = Month.valueOf(month);
+//		log.info("inside month transaction");
+//		YearMonth requestMonth = YearMonth.of(year, mon);
+//		LocalDateTime fromDate = requestMonth.atDay(1).atTime(0, 0, 0);
+//		LocalDateTime toDate = requestMonth.atEndOfMonth().atTime(23, 59, 59);
+//
+//		Account account = accountRepository.findByAccountNumber(accountNumber);
+//		if (account == null) {
+//			throw new CommonException(ExceptionConstants.ACCOUNT_NUMBER_NOT_FOUND);
+//		}
+//		if (transactionRepository.findAllByAccountAndTransactionDateBetween(account, fromDate, toDate).isEmpty()) {
+//			throw new CommonException(ExceptionConstants.MONTH_HISTORY_NOT_FOUND);
+//		}
+//		return transactionRepository.findAllByAccountAndTransactionDateBetween(account, fromDate, toDate);
+//	}
+
 	@Override
-	public List<ITransactionHistoryDto> viewMonthTransaction(String accountNumber, String month, Integer year) {
-		Month mon = Month.valueOf(month);
-		log.info("inside month transaction");
-		YearMonth requestMonth = YearMonth.of(year, mon);
-		LocalDateTime fromDate = requestMonth.atDay(1).atTime(0, 0, 0);
-		LocalDateTime toDate = requestMonth.atEndOfMonth().atTime(23, 59, 59);
+	public List<TransactionHistoryDto> viewWeekMonthTransaction(String type, String accountNumber, String month,
+			Integer year) {
+		String type1 = "week";
+		String type2 = "month";
 
 		Account account = accountRepository.findByAccountNumber(accountNumber);
 		if (account == null) {
 			throw new CommonException(ExceptionConstants.ACCOUNT_NUMBER_NOT_FOUND);
 		}
-		if (transactionRepository.findAllByAccountAndTransactionDateBetween(account, fromDate, toDate).isEmpty()) {
-			throw new CommonException(ExceptionConstants.MONTH_HISTORY_NOT_FOUND);
-		}
-		return transactionRepository.findAllByAccountAndTransactionDateBetween(account, fromDate, toDate);
-	}
-	
-	@Override
-	public List<ITransactionHistoryDto> viewWeekMonthTransaction(String accountNumber, String month, Integer year) {
-		Month mon = Month.valueOf(month);
-		log.info("inside month transaction");
-		YearMonth requestMonth = YearMonth.of(year, mon);
-		LocalDateTime fromDate = requestMonth.atDay(1).atTime(0, 0, 0);
-		LocalDateTime toDate = requestMonth.atEndOfMonth().atTime(23, 59, 59);
 
-		Account account = accountRepository.findByAccountNumber(accountNumber);
-		if (account == null) {
-			throw new CommonException(ExceptionConstants.ACCOUNT_NUMBER_NOT_FOUND);
-		}
-		if (transactionRepository.findAllByAccountAndTransactionDateBetween(account, fromDate, toDate).isEmpty()) {
-			throw new CommonException(ExceptionConstants.MONTH_HISTORY_NOT_FOUND);
-		}
-		return transactionRepository.findAllByAccountAndTransactionDateBetween(account, fromDate, toDate);
-	}
+		if (type.equalsIgnoreCase(type2)) {
+			List<TransactionHistoryDto> monthHistory = new ArrayList<>();
+			Month mon = Month.valueOf(month);
+			YearMonth yearMonth = YearMonth.of(year, mon);
+			LocalDateTime fromDate = yearMonth.atDay(1).atTime(1, 1, 1);
+			LocalDateTime toDate = yearMonth.atEndOfMonth().atTime(23, 59, 59);
 
+			List<Transaction> listTransaction = transactionRepository.findByAccountAndTransactionDateBetween(account,
+					fromDate, toDate);
+			listTransaction.stream().forEach(transaction -> {
+				TransactionHistoryDto transactionHistoryDto = new TransactionHistoryDto();
+				transactionHistoryDto.setTransactionId(transaction.getTransactionId());
+				transactionHistoryDto.setAccountNumber(transaction.getAccountNumber());
+				transactionHistoryDto.setTransactionType(transaction.getTransactionType());
+				transactionHistoryDto.setTransferAmount(transaction.getTransferAmount());
+				transactionHistoryDto.setTransactionDate(transaction.getTransactionDate());
+				transactionHistoryDto.setStatusMessage("Transaction Details");
+				transactionHistoryDto.setStatusCode(201);
+				monthHistory.add(transactionHistoryDto);
+			});
+			if (monthHistory.isEmpty()) {
+				throw new CommonException(ExceptionConstants.MONTH_HISTORY_NOT_FOUND);
+			}
+			return monthHistory;
+		}
+
+		if (type.equalsIgnoreCase(type1)) {
+			LocalDateTime fromDate = LocalDateTime.now().minusWeeks(1L);
+			LocalDateTime toDate = LocalDateTime.now();
+			List<TransactionHistoryDto> weekHistoryResponse = new ArrayList<>();
+
+			List<Transaction> listTransaction = transactionRepository.findByAccountAndTransactionDateBetween(account,
+					fromDate, toDate);
+			listTransaction.stream().forEach(transaction -> {
+				TransactionHistoryDto transactionHistoryDto = new TransactionHistoryDto();
+				transactionHistoryDto.setTransactionId(transaction.getTransactionId());
+				transactionHistoryDto.setAccountNumber(transaction.getAccountNumber());
+				transactionHistoryDto.setTransactionType(transaction.getTransactionType());
+				transactionHistoryDto.setTransferAmount(transaction.getTransferAmount());
+				transactionHistoryDto.setTransactionDate(transaction.getTransactionDate());
+				transactionHistoryDto.setStatusMessage("Transaction Details");
+				transactionHistoryDto.setStatusCode(201);
+				weekHistoryResponse.add(transactionHistoryDto);
+			});
+			return weekHistoryResponse;
+		} else {
+			throw new CommonException(ExceptionConstants.WEEK_HISTORY_NOT_FOUND);
+		}
+}
 }
